@@ -19,7 +19,7 @@ def run():
 
     path = pick_excel_file()
     if not path:
-        print("Dosya seçilmedi. Çıkılıyor.")
+        print("Dosya seçilmedi. Çikiliyor.")
         return
 
     stamp = now_stamp()
@@ -82,8 +82,8 @@ def run():
     write_report_xlsx(out_xlsx, genel_ozet, sheet_list_df, col_profile_df, warnings_df, dup_df)
 
     cards = [
-        {"label": "Sheet sayısı", "value": len(sheet_list_df)},
-        {"label": "Toplam satır", "value": total_rows},
+        {"label": "Sheet sayyisi", "value": len(sheet_list_df)},
+        {"label": "Toplam satir", "value": total_rows},
         {"label": "Toplam kolon", "value": total_cols},
         {"label": "WARN", "value": warn_count},
         {"label": "ERROR", "value": err_count},
@@ -114,7 +114,7 @@ def run():
     context = {
         "file_name": os.path.basename(path),
         "run_time": stamp,
-        "sampling_note": "Büyük sheet’lerde örnekleme kullanıldı." if sampling_any else "Örnekleme kullanılmadı.",
+        "sampling_note": "Büyük sheet'lerde örnekleme kullanildi." if sampling_any else "Örnekleme kullanılmadı.",
         "cards": cards,
         "sheets": sheets_ctx,
         "warnings": warnings_ctx

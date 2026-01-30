@@ -16,7 +16,7 @@ def quality_warnings(sheet_name: str, df: pd.DataFrame, col_profile: pd.DataFram
             warnings.append((sheet_name, "WARN", "Neredeyse boş kolon", col, f"%{miss} boş", miss))
 
         if dtype_label == "text" and uniq_ratio >= 90.0 and len(df) > 50:
-            warnings.append((sheet_name, "INFO", "Çok yüksek unique oranı", col, f"%{uniq_ratio} unique (free-text olabilir)", uniq_ratio))
+            warnings.append((sheet_name, "INFO", "Çok yüksek unique orani", col, f"%{uniq_ratio} unique (free-text olabilir)", uniq_ratio))
 
     return pd.DataFrame(warnings, columns=["sheet_adi","seviye","konu","kolon_adi","detay","etkilenen_oran"])
 
