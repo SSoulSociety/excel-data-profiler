@@ -195,6 +195,7 @@ class App(tk.Tk):
                 template_dir=self.template_dir,
                 sample_threshold=threshold,
                 sample_n_each=n_each,
+                auto_header=self.future_header_detect_var.get(),
                 log_cb=lambda m: self.after(0, self.log, m)
             )
             self.out_xlsx = result["out_xlsx"]

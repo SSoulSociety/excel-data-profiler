@@ -18,7 +18,8 @@ def generate_reports(
     template_name: str = "report_template.html",
     sample_threshold: int = 200_000,
     sample_n_each: int = 5_000,
-    log_cb=None,  # UI'ye log basmak için callback
+    auto_header: bool = False,
+    log_cb=None,  # UI'ye log basmak iç in callback
 ) -> dict:
     """
     Excel'den rapor üretir: report.xlsx + report.html
@@ -40,12 +41,13 @@ def generate_reports(
     out_html = os.path.join(output_dir, f"{base_name}_report_{stamp}.html")
 
     # Excel oku
+    log(f"auto_header={auto_header}")
     log("Excel okunuyor...")
-    sheets_data = read_excel_all_sheets(excel_path)
+    sheets_data = read_excel_all_sheets(excel_path, auto_header=auto_header)
     log(f"{len(sheets_data)} sheet bulundu.")
 
     sheet_rows = []
-    all_profiles = []
+    all_profiles = []   
     all_warnings = []
     all_dups = []
     sampling_any = False
@@ -54,7 +56,7 @@ def generate_reports(
         df = info["df"]
         header_row = info.get("header_row", 1)
 
-        log(f"Sheet işleniyor: {sheet_name} (satır={len(df)}, sütun={df.shape[1]})")
+        log(f"Sheet isleniyor: {sheet_name} (satir={len(df)}, sutun={df.shape[1]}, header_satiri={header_row})")
 
         # Big data örnekleme
         df_for_profile, sampled = sample_df(df, threshold=sample_threshold, n_each=sample_n_each)
@@ -65,6 +67,7 @@ def generate_reports(
             "satir_sayisi": int(len(df)),
             "sutun_sayisi": int(df.shape[1]),
             "header_satiri": int(header_row),
+            "header_confidence": float(info.get("header_confidence", 0.0)),
         })
 
         # Kolon profili
@@ -106,11 +109,11 @@ def generate_reports(
     write_report_xlsx(out_xlsx, genel_ozet, sheet_list_df, col_profile_df, warnings_df, dup_df)
 
     # HTML raporu yaz
-    log("report.html yazılıyor...")
+    log("report.html yaziliyor...")
 
     cards = [
-        {"label": "Sheet sayısı", "value": len(sheet_list_df)},
-        {"label": "Toplam satır", "value": total_rows},
+        {"label": "Sheet sayisi", "value": len(sheet_list_df)},
+        {"label": "Toplam satir", "value": total_rows},
         {"label": "Toplam kolon", "value": total_cols},
         {"label": "WARN", "value": warn_count},
         {"label": "ERROR", "value": err_count},
@@ -138,13 +141,42 @@ def generate_reports(
             "detay": w.get("detay", ""),
         })
 
+    # chart 1: sheet sizes
+    sheet_labels = [r["sheet_adi"] for r in sheet_rows]
+    sheet_row_counts = [int(r["satir_sayisi"]) for r in sheet_rows]
+
+    # chart 2: top missing columns (need col_profile_df)
+    top_missing = []
+    if len(col_profile_df):
+        tmp = col_profile_df.copy()
+        if "bos_oran" in tmp.columns:
+            tmp = tmp.sort_values("bos_oran", ascending=False).head(10)
+            for _, rr in tmp.iterrows():
+                label = f"{rr.get('sheet_adi','')}::{rr.get('kolon_adi','')}"
+                top_missing.append({
+                    "label": label,
+                    "value": float(rr.get("bos_oran", 0.0))
+                })
+
+    charts = {
+    "sheet_sizes": {
+        "labels": sheet_labels,
+        "values": sheet_row_counts
+    },
+    "top_missing": {
+        "labels": [x["label"] for x in top_missing],
+        "values": [x["value"] for x in top_missing]
+    }
+}
+
     context = {
         "file_name": os.path.basename(excel_path),
         "run_time": stamp,
-        "sampling_note": "Büyük sheet’lerde örnekleme kullanıldı." if sampling_any else "Örnekleme kullanılmadı.",
+        "sampling_note": "...",
         "cards": cards,
         "sheets": sheets_ctx,
         "warnings": warnings_ctx,
+         "charts": charts
     }
 
     write_report_html(template_dir, template_name, out_html, context)

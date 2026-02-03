@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="tr">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
   <meta charset="utf-8"/>
   <title>Excel Raporu</title>
   <style>
@@ -20,6 +22,7 @@
   </p>
 
   <div class="cards">
+    <div style = height:320px;></div>
     {% for c in cards %}
       <div class="card">
         <div style="font-size:12px;color:#666">{{ c.label }}</div>
@@ -27,6 +30,41 @@
       </div>
     {% endfor %}
   </div>
+
+  <h2>Dashboard</h2>
+<div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
+
+  <div style="
+    flex:1;
+    min-width:360px;
+    height:320px;
+    background:#ffffff;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    box-sizing:border-box;
+  ">
+    <h3>Sheet bazli satir sayisi</h3>
+    <canvas id="chartSheetSizes" height="140"></canvas>
+  </div>
+
+  <div style="
+    flex:1;
+    min-width:360px;
+    height:320px; 
+    background:#ffffff;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    box-sizing:border-box;
+
+  ">
+    <h3>En cok bos oranli kolonlar (Top 10)</h3>
+    <canvas id="chartTopMissing" height="140"></canvas>
+  </div>
+
+</div>
+
 
   <h3>Sheet Özeti</h3>
   <table>
@@ -64,7 +102,110 @@
         <td>{{ w.detay }}</td>
       </tr>
       {% endfor %}
-    </tbody>
+      
+<script>
+  // Jinja'dan gelen chart datasi
+  const charts = JSON.parse('{{ charts | tojson | safe }}');
+
+  // Uzun label kisaltma
+  function shortLabel(s) {
+    if (!s) return "";
+    if (s.length <= 18) return s;
+    return s.slice(0, 18) + "...";
+  }
+
+  // Ortak chart ayarlari
+  const baseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        callbacks: {
+          title: function(items) {
+            if (!items || !items.length) return "";
+            const i = items[0].dataIndex;
+            return items[0].chart.data.labels[i]; // tam label
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          autoSkip: true,
+          maxRotation: 0,
+          callback: function(value) {
+            const lbl = this.getLabelForValue(value);
+            return shortLabel(lbl);
+          }
+        }
+      },
+      y: {
+        beginAtZero: true
+      }
+    }
+  };
+
+  // ===============================
+  // 1) Sheet bazli satir sayisi
+  // ===============================
+  if (charts && charts.sheet_sizes) {
+    const ctx1 = document.getElementById("chartSheetSizes");
+    if (ctx1) {
+      new Chart(ctx1, {
+        type: "bar",
+        data: {
+          labels: charts.sheet_sizes.labels,
+          datasets: [{
+            label: "Satir sayisi",
+            data: charts.sheet_sizes.values,
+            backgroundColor: "#4f8cff"
+          }]
+        },
+        options: baseOptions
+      });
+    }
+  }
+
+  // ===============================
+  // 2) En cok bos oranli kolonlar
+  // ===============================
+  if (charts && charts.top_missing) {
+    const ctx2 = document.getElementById("chartTopMissing");
+    if (ctx2) {
+      new Chart(ctx2, {
+        type: "bar",
+        data: {
+          labels: charts.top_missing.labels,
+          datasets: [{
+            label: "Bos oran",
+            data: charts.top_missing.values,
+            backgroundColor: "#ff6b6b"
+          }]
+        },
+        options: {
+          ...baseOptions,
+          indexAxis: "y",
+          scales: {
+            y: {
+              ticks: { autoSkip: false }
+            },
+            x: {
+              beginAtZero: true,
+              max: 1,
+              ticks: {
+                callback: (v) => Math.round(v * 100) + "%"
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+</script>
+</tbody>
   </table>
 
   <p style="margin-top:18px;color:#666;font-size:12px">
