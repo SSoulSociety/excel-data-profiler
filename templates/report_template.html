@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
 
@@ -9,9 +10,17 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <style>
-    body { background: #f7f7fb; }
-    .card { border-radius: 14px; }
-    .muted { color: #6c757d; }
+    body {
+      background: #f7f7fb;
+    }
+
+    .card {
+      border-radius: 14px;
+    }
+
+    .muted {
+      color: #6c757d;
+    }
   </style>
 </head>
 
@@ -23,13 +32,13 @@
         <h1 class="h3 mb-1">Excel Dashboard</h1>
         <div class="muted small">File: {{ file_name }} | Run: {{ run_time }}</div>
         {% if sampling_note %}
-          <div class="text-warning small mt-1">{{ sampling_note }}</div>
+        <div class="text-warning small mt-1">{{ sampling_note }}</div>
         {% endif %}
       </div>
     </div>
 
-    <div class="row g-3 mb-4">
-      <div class="col-12 col-md-6 col-lg-3">
+    <div class="row g-3 mb-4 align-items-stretch">
+      <div class="col-12 col-md-6 col-lg-3 h-100">
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="muted small">Rows</div>
@@ -38,7 +47,7 @@
         </div>
       </div>
 
-      <div class="col-12 col-md-6 col-lg-3">
+      <div class="col-12 col-md-6 col-lg-3 h-100">
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="muted small">Columns</div>
@@ -47,7 +56,7 @@
         </div>
       </div>
 
-      <div class="col-12 col-md-6 col-lg-3">
+      <div class="col-12 col-md-6 col-lg-3 h-100">
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="muted small">Missing cells</div>
@@ -57,7 +66,7 @@
         </div>
       </div>
 
-      <div class="col-12 col-md-6 col-lg-3">
+      <div class="col-12 col-md-6 col-lg-3 h-100">
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="muted small">Duplicate rows</div>
@@ -65,7 +74,30 @@
           </div>
         </div>
       </div>
+      <div class="col-12 col-md-6 col-lg-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="muted small">Data Quality Score</div>
+            <div class="h4 mb-0">{{ kpis.quality_score }}/100</div>
+            <div class="muted small">Lower is worse</div>
+          </div>
+        </div>
+      </div>
+
     </div>
+    <div class="row g-3 mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="fw-semibold mb-2">Sheet size distribution (row count)</div>
+            <div style="height:320px;">
+              <canvas id="chartSheetSizes"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
     <div class="row g-3 mb-4">
       <div class="col-12 col-lg-6">
@@ -103,17 +135,17 @@
             <thead>
               <tr>
                 {% for c in preview_cols %}
-                  <th class="text-nowrap">{{ c }}</th>
+                <th class="text-nowrap">{{ c }}</th>
                 {% endfor %}
               </tr>
             </thead>
             <tbody>
               {% for r in preview_rows %}
-                <tr>
-                  {% for c in preview_cols %}
-                    <td class="text-nowrap">{{ r.get(c, "") }}</td>
-                  {% endfor %}
-                </tr>
+              <tr>
+                {% for c in preview_cols %}
+                <td class="text-nowrap">{{ r.get(c, "") }}</td>
+                {% endfor %}
+              </tr>
               {% endfor %}
             </tbody>
           </table>
@@ -126,13 +158,13 @@
         <div class="fw-semibold mb-2">Top issues</div>
 
         {% if top_issues and top_issues|length > 0 %}
-          <ul class="mb-0">
-            {% for it in top_issues %}
-              <li>{{ it }}</li>
-            {% endfor %}
-          </ul>
+        <ul class="mb-0">
+          {% for it in top_issues %}
+          <li>{{ it }}</li>
+          {% endfor %}
+        </ul>
         {% else %}
-          <div class="muted">No issues detected.</div>
+        <div class="muted">No issues detected.</div>
         {% endif %}
       </div>
     </div>
@@ -146,90 +178,128 @@
   {{ charts | tojson }}
 </script>
   <script>
-    
-  // charts objesini tek sefer tanimla (sayfa iki kez render edilse bile patlamaz)
-  const charts = window.__charts || JSON.parse(
-    document.getElementById("charts-data")?.textContent || "{}"
-  );
-  window.__charts = charts;
 
-  function shortLabel(s) {
-    if (!s) return "";
-    if (s.length <= 22) return s;
-    return s.slice(0, 22) + "...";
-  }
+    // charts objesini tek sefer tanimla (sayfa iki kez render edilse bile patlamaz)
+    const charts = window.__charts || JSON.parse(
+      document.getElementById("charts-data")?.textContent || "{}"
+    );
+    window.__charts = charts;
 
-  function getCanvas(id) {
-    return document.getElementById(id);
-  }
+    function shortLabel(s) {
+      if (!s) return "";
+      if (s.length <= 22) return s;
+      return s.slice(0, 22) + "...";
+    }
 
-  // 1) Top missing (horizontal bar)
-  (function () {
-    const c = getCanvas("chartTopMissing");
-    if (!c || !charts || !charts.top_missing) return;
+    function getCanvas(id) {
+      return document.getElementById(id);
+    }
 
-    new Chart(c, {
-      type: "bar",
-      data: {
-        labels: (charts.top_missing.labels || []).map(shortLabel),
-        datasets: [{
-          label: "Missing %",
-          data: charts.top_missing.values || []
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: "y",
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              title: function(items) {
-                const i = items && items.length ? items[0].dataIndex : 0;
-                const full = (charts.top_missing.labels || [])[i] || "";
-                return full;
-              },
-              label: function(item) {
-                const v = item.parsed.x;
-                return " " + v + "%";
+    // 0) Sheet size distribution (bar chart)
+    (function () {
+      const c = getCanvas("chartSheetSizes");
+      if (!c || !charts || !charts.sheet_sizes) return;
+
+      new Chart(c, {
+        type: "bar",
+        data: {
+          labels: (charts.sheet_sizes.labels || []).map(shortLabel),
+          datasets: [{
+            label: "Row count",
+            data: charts.sheet_sizes.values || []
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: function (items) {
+                  const i = items && items.length ? items[0].dataIndex : 0;
+                  const full = (charts.sheet_sizes.labels || [])[i] || "";
+                  return full;
+                }
               }
             }
-          }
-        },
-        scales: {
-          x: {
-            beginAtZero: true,
-            ticks: { callback: function(v) { return v + "%"; } }
           },
-          y: { ticks: { autoSkip: false } }
+          scales: {
+            y: { beginAtZero: true }
+          }
         }
-      }
-    });
-  })();
+      });
+    })();
 
-  // 2) Type distribution (doughnut)
-  (function () {
-    const c = getCanvas("chartTypeDist");
-    if (!c || !charts || !charts.type_dist) return;
 
-    new Chart(c, {
-      type: "doughnut",
-      data: {
-        labels: charts.type_dist.labels || [],
-        datasets: [{
-          label: "Count",
-          data: charts.type_dist.values || []
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: "bottom" } }
-      }
-    });
-  })();
-</script>
+    // 1) Top missing (horizontal bar)
+    (function () {
+      const c = getCanvas("chartTopMissing");
+      if (!c || !charts || !charts.top_missing) return;
+
+      new Chart(c, {
+        type: "bar",
+        data: {
+          labels: (charts.top_missing.labels || []).map(shortLabel),
+          datasets: [{
+            label: "Missing %",
+            data: charts.top_missing.values || []
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: "y",
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: function (items) {
+                  const i = items && items.length ? items[0].dataIndex : 0;
+                  const full = (charts.top_missing.labels || [])[i] || "";
+                  return full;
+                },
+                label: function (item) {
+                  const v = item.parsed.x;
+                  return " " + v + "%";
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { callback: function (v) { return v + "%"; } }
+            },
+            y: { ticks: { autoSkip: false } }
+          }
+        }
+      });
+    })();
+
+    // 2) Type distribution (doughnut)
+    (function () {
+      const c = getCanvas("chartTypeDist");
+      if (!c || !charts || !charts.type_dist) return;
+
+      new Chart(c, {
+        type: "doughnut",
+        data: {
+          labels: charts.type_dist.labels || [],
+          datasets: [{
+            label: "Count",
+            data: charts.type_dist.values || []
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom" } }
+        }
+      });
+    })();
+  </script>
 
 </body>
+
 </html>

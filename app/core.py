@@ -254,6 +254,18 @@ def generate_reports(
         except Exception:
             preview_cols = []
             preview_rows = []
+            
+    # -----------------------------
+    # Data Quality Score (0-100)
+    # -----------------------------
+    # Basit ve explainable: 100'den ceza dusuyoruz.
+    # error: daha agir, warn: orta, missing_pct: dogrudan, dup_rows: az da olsa etki
+    penalty = 0.0
+    penalty += err_count * 8   # ERROR daha agir
+    penalty += warn_count * 3  # WARN orta
+    penalty += float(missing_pct) * 0.8
+    penalty += (dup_rows / max(1, rows_count)) * 100 * 0.8  # dup oranini %'ye cevirip cezaya kat
+    quality_score = int(round(max(0, min(100, 100 - penalty))))
 
     kpis = {
         "rows": rows_count,
@@ -261,6 +273,7 @@ def generate_reports(
         "missing_total": missing_total,
         "missing_pct": missing_pct,
         "dup_rows": dup_rows,
+        "quality_score": quality_score,
     }
 
     if sampling_any:
