@@ -42,26 +42,46 @@ Built with Python, Pandas, Tkinter, Jinja2 and Chart.js.
 ---
 
 ## Project Structure
-
-```text
-excel_reporter/
-  app/
-    core.py                # main pipeline
-    gui.py                 # Tkinter UI
-    excel_reader.py        # Excel reader + auto header detection
-    header_detector.py     # header detection logic
-    profiler.py            # column profiling
-    quality_checks.py      # data quality checks
-    report_html.py         # HTML report generator (Jinja2)
-    report_xlsx.py         # Excel report generator
-    utils.py               # helper utilities
-  templates/
-    report_template.html   # HTML report template
-  output/                  # generated reports (gitignored)
-  requirements.txt
-  README.md
----
-
+ excel_reporter
+│
+├──  app
+│   │
+│   ├──  core.py
+│   │     → Main processing pipeline
+│   │
+│   ├──  gui.py
+│   │     → Tkinter user interface
+│   │
+│   ├──  excel_reader.py
+│   │     → Excel reader + auto header detection
+│   │
+│   ├──  header_detector.py
+│   │     → Header detection logic
+│   │
+│   ├──  profiler.py
+│   │     → Column profiling
+│   │
+│   ├──  quality_checks.py
+│   │     → Data quality validation
+│   │
+│   ├──  report_html.py
+│   │     → HTML report generator (Jinja2)
+│   │
+│   ├──  report_xlsx.py
+│   │     → Excel report generator
+│   │
+│   └──  utils.py
+│         → Helper utilities
+│
+├──  templates
+│   └── report_template.html
+│        → HTML report template
+│
+├──  output
+│   └── (generated reports - gitignored)
+│
+├──  requirements.txt
+└──  README.md
 
 
 
