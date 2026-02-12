@@ -42,6 +42,7 @@ Built with Python, Pandas, Tkinter, Jinja2 and Chart.js.
 ---
 
 ## Project Structure
+```bash
  excel_reporter
 │
 ├──  app
@@ -82,7 +83,7 @@ Built with Python, Pandas, Tkinter, Jinja2 and Chart.js.
 │
 ├──  requirements.txt
 └──  README.md
-
+```
 
 
 
